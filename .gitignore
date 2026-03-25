@@ -1,0 +1,24 @@
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Data and Vector Databases
+data/raw/
+data/processed/
+data/vector_db/
+*.csv
+*.json
+*.faiss
+*.pkl
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env

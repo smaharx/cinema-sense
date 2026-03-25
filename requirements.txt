@@ -1,0 +1,17 @@
+# Data & Math
+pandas
+numpy
+scikit-learn
+
+# Vector Database
+faiss-cpu
+
+# NLP & Text Processing
+nltk
+
+# UI & Dashboard
+streamlit
+
+# Utilities
+python-dotenv
+joblib
