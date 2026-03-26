@@ -1,13 +1,13 @@
-import pandas as pd
-import ast
-from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.stem.porter import PorterStemmer
+import pandas as pd #Data handling
+import ast # Turning list of dictionaries into workable objects
+from sklearn.feature_extraction.text import TfidfVectorizer # Converting text into numbers based on most appeared low priority and less appeared high priority to the words
+from nltk.stem.porter import PorterStemmer # 
 import nltk
 import pickle
 import os
 
 # Download necessary NLTK data (runs silently if already downloaded)
-nltk.download('punkt', quiet=True)
+nltk.download('p unkt', quiet=True)
 
 class DataPreprocessor:
     def __init__(self):
