@@ -23,15 +23,15 @@ class DataLoader:
         return movies
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Removes noise and keeps only the features necessary for ML."""
-        print("[INFO] Cleaning data and dropping noisy columns...")
+        """Removes noise and keeps only the features necessary for ML and filtering."""
+        print("[INFO] Cleaning data and keeping core ML + Metadata columns...")
         
-        # We only keep features that define the 'soul' of the movie
-        columns_to_keep = ['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew']
+        # ADDED 'vote_average' and 'runtime' for deterministic V2 filtering
+        columns_to_keep = ['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew', 'vote_average', 'runtime']
         df = df[columns_to_keep]
 
-        # Drop any movies that don't have a plot summary (overview)
-        df.dropna(inplace=True)
+        # Drop any movies that don't have a plot summary or missing runtimes
+        df.dropna(subset=['overview', 'runtime'], inplace=True)
 
         return df
 
