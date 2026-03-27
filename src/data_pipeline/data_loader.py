@@ -1,14 +1,18 @@
-import pandas as pd
-import os
+import pandas as pd # in this file i am using pandas for merging files, cleaning it, 
+                    #removing unwanted movies, specifiying the conditions thourgh columns
+import os       #in this files i am using os library to check the file is exist or not
+                # if not then create then create new one 
 
 class DataLoader:
-    def __init__(self, movies_path: str, credits_path: str):
-        """Initializes the DataLoader with paths to the raw datasets."""
+    def __init__(self, movies_path: str, credits_path: str):  
+        """Using paths to gave to the methods for performing opertaions keeping in
+        mind also the reusebality of the files"""
         self.movies_path = movies_path
         self.credits_path = credits_path
 
     def load_and_merge(self) -> pd.DataFrame:
-        """Loads the raw CSV files, merges them, and returns a unified DataFrame."""
+       """Loading datafiles and merging files based on the title by 
+       using inner join """
         print("[INFO] Loading raw datasets...")
         try:
             movies = pd.read_csv(self.movies_path)
@@ -23,7 +27,8 @@ class DataLoader:
         return movies
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Removes noise and keeps only the features necessary for ML and filtering."""
+        """Cleaning data by specifying number of columns i want 
+        and selecting movies based on summary and time of the each movie given"""
         print("[INFO] Cleaning data and keeping core ML + Metadata columns...")
         
         # ADDED 'vote_average' and 'runtime' for deterministic V2 filtering
@@ -36,7 +41,8 @@ class DataLoader:
         return df
 
     def save_processed_data(self, df: pd.DataFrame, output_path: str):
-        """Saves the clean DataFrame to the processed folder."""
+       """Storing the data into clean file so that we donot need to do all this 
+       labour work again and again"""
         # Ensure the directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         df.to_csv(output_path, index=False)
@@ -44,8 +50,8 @@ class DataLoader:
 
 # --- Quick Test Block ---
 if __name__ == "__main__":
-    # Define absolute or relative paths based on where the script is run
-    # Using relative paths from the root directory 'cinema-sense'
+    """assigning paths to the variable so that we can pass them as 
+        arguments to the methods"""
     MOVIES_FILE = "data/raw/tmdb_5000_movies.csv"
     CREDITS_FILE = "data/raw/tmdb_5000_credits.csv"
     OUTPUT_FILE = "data/processed/clean_movies.csv"

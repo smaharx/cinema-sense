@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer # Converting text in
 from nltk.stem.porter import PorterStemmer # 
 import nltk
 import pickle
-import os
+import os #Used to confirm files directory like searching, creating 
 
 # Download necessary NLTK data (runs silently if already downloaded)
 nltk.download('p unkt', quiet=True)
