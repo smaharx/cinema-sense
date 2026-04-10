@@ -21,11 +21,20 @@ class HybridEngine:
         params = self.router.parse_query(user_query)
         print(f"[SYSTEM TRANSLATION]: {params}")
         
-        # Guardrail: If the user didn't mention a movie we can understand
+        # --- THE FIX: Escaping the Title Trap ---
         if not params.get("movie_title"):
-            return pd.DataFrame({"Error": ["Could not detect a target movie. Try phrasing it like 'movies similar to [Movie Name]'."]})
+            print("[INFO] No movie title detected. Switching to Pure Semantic Search... 🧠")
+            # We pass the raw user_query directly to the AI to match against movie plots!
+            # Note: Your ContentBasedRecommender needs this method to handle raw text.
+            results = self.content_recommender.recommend_from_text(
+                text_query=user_query,
+                top_n=top_n,
+                min_rating=params["min_rating"],
+                max_runtime=params["max_runtime"]
+            )
+            return results
 
-        # 2. Feed the translated parameters directly into our V2 AI Engine
+        # 2. Feed the translated parameters into our V2 Engine (Title-based)
         results = self.content_recommender.recommend(
             movie_title=params["movie_title"],
             top_n=top_n,
@@ -45,13 +54,15 @@ if __name__ == "__main__":
         # Boot up the master engine
         engine = HybridEngine(DF_PATH, VECTORS_PATH, FAISS_PATH)
         
-        # The Ultimate V3 Test: Full Natural Language to Filtered AI Output
-        query = "I want to watch something similar to The Matrix but it needs to have a rating of at least 6.5 and be under 110 minutes."
+        # TEST 1: The original title-based test
+        query1 = "I want to watch something similar to The Matrix but under 110 minutes."
+        print("\n=== TEST 1: TITLE SEARCH ===")
+        print(engine.get_recommendations(query1))
         
-        results = engine.get_recommendations(query)
-        
-        print("\n=== FINAL AI OUTPUT ===")
-        print(results)
+        # TEST 2: The NEW pure semantic test (Escaping the trap!)
+        query2 = "a guy with cancer finding hope"
+        print("\n=== TEST 2: PURE SEMANTIC SEARCH ===")
+        print(engine.get_recommendations(query2))
         
     except Exception as e:
         print(f"[ERROR] {e}")
