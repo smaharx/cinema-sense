@@ -7,7 +7,7 @@ import pickle
 import os #Used to confirm files directory like searching, creating 
 
 # Download necessary NLTK data (runs silently if already downloaded)
-nltk.download('p unkt', quiet=True)
+nltk.download('punkt', quiet=True)
 
 class DataPreprocessor:
     def __init__(self):
@@ -67,7 +67,6 @@ class DataPreprocessor:
         print("[INFO] Merging features into 'tags'...")
         df['tags'] = df['overview'] + df['genres'] + df['keywords'] + df['cast'] + df['crew']
         
-       
         # Convert list back to a single string paragraph and make lowercase
         # V2 UPDATE: We must carry vote_average and runtime forward!
         new_df = df[['movie_id', 'title', 'tags', 'vote_average', 'runtime']].copy()
@@ -93,11 +92,18 @@ class DataPreprocessor:
         df_path = os.path.join(output_dir, 'movies_with_tags.pkl')
         vector_path = os.path.join(output_dir, 'tfidf_vectors.pkl')
         
+        # --- THE FIX: Add a path and save the Vectorizer itself! ---
+        vectorizer_path = os.path.join(output_dir, 'tfidf_vectorizer.pkl')
+        
         pickle.dump(df, open(df_path, 'wb'))
         pickle.dump(vectors, open(vector_path, 'wb'))
         
+        # Saving the "translator dictionary" so main.py can use it later
+        pickle.dump(self.vectorizer, open(vectorizer_path, 'wb'))
+        
         print(f"[SUCCESS] Vectorization complete. Shape: {vectors.shape}")
         print(f"[SUCCESS] Files saved to {output_dir}")
+        print(f"[SUCCESS] Saved Vectorizer model for real-time text translation!")
         return vectors
 
 # --- Quick Test Block ---
