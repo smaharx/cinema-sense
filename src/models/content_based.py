@@ -36,7 +36,6 @@ class ContentBasedRecommender(BaseRecommender):
         query_vector = self.vectors[movie_idx].reshape(1, -1)
         
         # 1. THE AI LAYER: Fetch a large pool of candidates (e.g., top 100)
-        # We fetch more than we need because our hard filters will drop some!
         distances, indices = self.index.search(query_vector, 100)
         
         # Grab the candidate movies
@@ -45,16 +44,51 @@ class ContentBasedRecommender(BaseRecommender):
         candidates['similarity_score'] = np.round(distances[0], 3)
         
         # 2. THE DETERMINISTIC LAYER (The Guardrails)
-        # Drop the movie the user actually searched for
         filtered_df = candidates[candidates['title'] != movie_title]
-        
-        # Apply strict time and quality filters
         filtered_df = filtered_df[
             (filtered_df['vote_average'] >= min_rating) & 
             (filtered_df['runtime'] <= max_runtime)
         ]
         
         # 3. Return only the top N that survived the gauntlet
+        final_results = filtered_df[['title', 'vote_average', 'runtime', 'similarity_score']].head(top_n)
+        
+        if final_results.empty:
+            return pd.DataFrame({"Message": ["No movies found matching both similarity and your strict filters."]})
+            
+        return final_results
+
+    # --- THE NEW FUNCTION: PURE SEMANTIC SEARCH ---
+    def recommend_from_text(self, text_query: str, top_n: int = 5, min_rating: float = 0.0, max_runtime: int = 999) -> pd.DataFrame:
+        """
+        Converts raw text into a vector on the fly and searches the database.
+        """
+        # We need the vectorizer to translate the new text into math.
+        vectorizer_path = "data/processed/tfidf_vectorizer.pkl"
+        
+        if not os.path.exists(vectorizer_path):
+            return pd.DataFrame({"Error": ["Missing tfidf_vectorizer.pkl! You must save the vectorizer model in your data pipeline so we can translate raw text."]})
+            
+        vectorizer = pickle.load(open(vectorizer_path, 'rb'))
+        
+        # Translate the English sentence into a math vector
+        query_vector = vectorizer.transform([text_query]).toarray().astype('float32')
+        
+        # 1. THE AI LAYER
+        distances, indices = self.index.search(query_vector, 100)
+        
+        candidate_indices = indices[0]
+        candidates = self.movies_df.iloc[candidate_indices].copy()
+        candidates['similarity_score'] = np.round(distances[0], 3)
+        
+        # 2. THE DETERMINISTIC LAYER
+        # Notice we don't drop any specific movie_title here because the user just typed a concept!
+        filtered_df = candidates[
+            (candidates['vote_average'] >= min_rating) & 
+            (candidates['runtime'] <= max_runtime)
+        ]
+        
+        # 3. Return results
         final_results = filtered_df[['title', 'vote_average', 'runtime', 'similarity_score']].head(top_n)
         
         if final_results.empty:
@@ -72,12 +106,10 @@ if __name__ == "__main__":
         recommender = ContentBasedRecommender(DF_PATH, VECTORS_PATH, FAISS_PATH)
         
         print("\n=== TEST 1: Standard AI Search ===")
-        print("Movies similar to 'The Matrix':")
         print(recommender.recommend("The Matrix", top_n=5))
         
-        print("\n=== TEST 2: The Qasimio Smart Filter ===")
-        print("Movies similar to 'The Matrix' but MUST be under 110 mins and highly rated (>= 6.5):")
-        print(recommender.recommend("The Matrix", top_n=5, min_rating=6.5, max_runtime=110))
+        print("\n=== TEST 2: Pure Text Search (New!) ===")
+        print(recommender.recommend_from_text("a guy with cancer", top_n=5))
 
     except Exception as e:
         print(f"[ERROR] {e}")
