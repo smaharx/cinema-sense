@@ -23,7 +23,7 @@ class HybridEngine:
         
         # --- THE FIX: Escaping the Title Trap ---
         if not params.get("movie_title"):
-            print("[INFO] No movie title detected. Switching to Pure Semantic Search... 🧠")
+            print("[INFO] No movie title detected. Switching to Pure Semantic Search...")
             # We pass the raw user_query directly to the AI to match against movie plots!
             # Note: Your ContentBasedRecommender needs this method to handle raw text.
             results = self.content_recommender.recommend_from_text(
