@@ -39,8 +39,15 @@ if st.button("Find Movies"):
     poster_urls = [fetch_poster(movie_id) for movie_id in recommended_movies]
 
     # Display the movie posters in a Streamlit layout
+   # Display the movie posters in a responsive grid
     cols = st.columns(3)
     for i, poster_url in enumerate(poster_urls):
-        with cols[i]:
-            st.image(poster_url, use_column_width=True)
-            st.write(f"Recommended Movie {i+1}")
+       # The % 3 math trick makes it loop back to the first column (0, 1, 2, 0, 1, 2...)
+       with cols[i % 3]: 
+           # We also fixed the deprecation warning here!
+           st.image(poster_url, use_container_width=True) 
+           st.write(f"Recommendation {i+1}")
+            
+            
+            
+            
