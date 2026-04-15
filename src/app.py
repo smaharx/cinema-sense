@@ -1,21 +1,16 @@
 """
 Cinema-Sense: AI-Powered Semantic Movie Search
-
-This is the main entry point for the Cinema-Sense application, built using Streamlit.
-
-The app provides a simple search interface where users can enter a movie plot, and the application will use the hybrid recommendation engine and TMDb API to display the top 3 movie posters that best match the input.
-
-Key functionality:
-1. Accept user input for a movie plot in a search bar
-2. Pass the plot text to the HybridEngine to get the top 3 movie recommendations
-3. Use the tmdb_api utility to fetch the poster URLs for the recommended movies
-4. Display the movie posters in a Streamlit layout
 """
-
 
 import streamlit as st
 from models.hybrid_engine import HybridEngine
-from utils.tmdb_api import fetch_poster
+from utils.tmdb_api import get_movie_poster  
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv() 
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 st.set_page_config(
     page_title="Cinema-Sense",
@@ -35,19 +30,15 @@ if st.button("Find Movies"):
     engine = HybridEngine("data/processed/movies_with_tags.pkl", "data/processed/tfidf_vectors.pkl", "data/vector_db/movies.faiss")
     recommended_movies = engine.get_recommendations(plot_text, top_n=3)
 
-    # Fetch the poster URLs for the recommended movies using the TMDb API
-    poster_urls = [fetch_poster(movie_id) for movie_id in recommended_movies]
+    # Fetch the poster URLs
+    poster_urls = [get_movie_poster(movie) for movie in recommended_movies]
 
-    # Display the movie posters in a Streamlit layout
-   # Display the movie posters in a responsive grid
+    # Display the movie posters in a responsive grid
     cols = st.columns(3)
-    for i, poster_url in enumerate(poster_urls):
-       # The % 3 math trick makes it loop back to the first column (0, 1, 2, 0, 1, 2...)
-       with cols[i % 3]: 
-           # We also fixed the deprecation warning here!
-           st.image(poster_url, use_container_width=True) 
-           st.write(f"Recommendation {i+1}")
-            
-            
-            
-            
+    
+    # We use zip() to pair up the movie title with its poster URL!
+    for i, (movie_title, poster_url) in enumerate(zip(recommended_movies, poster_urls)):
+        with cols[i % 3]: 
+            st.image(poster_url, width="stretch") 
+            # Write the actual movie title under the poster as a subheader
+            st.subheader(movie_title)
