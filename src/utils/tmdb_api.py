@@ -2,39 +2,37 @@ import os
 import requests
 from dotenv import load_dotenv
 
+# Load the environment variables
 load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-def fetch_poster(movie_title):
-    if not TMDB_API_KEY or "your_key" in TMDB_API_KEY:
-        return "https://via.placeholder.com/500x750?text=Missing+API+Key"
+def get_movie_poster(movie_title):
+    """Fetches the movie poster URL from TMDb based on the movie title."""
+    # Fallback image if no API key is found
+    if not TMDB_API_KEY:
+        print("[WARNING] TMDB_API_KEY is missing!")
+        return "https://via.placeholder.com/500x750?text=No+API+Key"
 
-    search_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
-    
+    base_url = "https://api.themoviedb.org/3/search/movie"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": movie_title
+    }
+
     try:
-        response = requests.get(search_url)
+        response = requests.get(base_url, params=params)
+        response.raise_for_status() # Raises an error for bad HTTP status codes
         data = response.json()
-        
-        # DEBUG: Let's see what TMDb is actually saying
-        if 'status_message' in data:
-            print(f"[TMDb ERROR] {data['status_message']}")
-            return "https://via.placeholder.com/500x750?text=Invalid+API+Key"
 
-        if data.get('results') and len(data['results']) > 0:
-            poster_path = data['results'][0].get('poster_path')
+        if data.get("results"):
+            # Get the poster path of the top search result
+            poster_path = data["results"][0].get("poster_path")
             if poster_path:
+                # TMDb requires this specific base URL for images
                 return f"https://image.tmdb.org/t/p/w500{poster_path}"
-        
-        return "https://via.placeholder.com/500x750?text=No+Poster+Found"
             
     except Exception as e:
-        print(f"[SYSTEM ERROR] {e}")
-        return "https://via.placeholder.com/500x750?text=System+Error"
-
-if __name__ == "__main__":
-    print(f"--- Testing TMDb Connection ---")
-    # This will print the first 4 characters of your key to verify it's loading
-    print(f"Using API Key starting with: {str(TMDB_API_KEY)[:4]}...") 
-    
-    poster = fetch_poster("Inception")
-    print(f"Resulting URL: {poster}")
+        print(f"[ERROR] Failed to fetch poster for '{movie_title}': {e}")
+        
+    # Fallback image if the movie isn't found or an error occurs
+    return "https://via.placeholder.com/500x750?text=No+Poster+Found"
