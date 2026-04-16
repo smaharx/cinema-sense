@@ -15,18 +15,28 @@ st.set_page_config(
     page_title="Cinema-Sense",
     page_icon="🎬",
     layout="wide",
-    initial_sidebar_state="expanded" # We open the sidebar so they see the filters!
+    initial_sidebar_state="expanded" 
 )
+
+# --- THE FIX: CACHING THE HEAVY AI ENGINE ---
+@st.cache_resource(show_spinner="Booting up AI Engine (This only happens once)...")
+def load_engine():
+    """Loads the heavy pickle files and FAISS index into RAM permanently."""
+    return HybridEngine(
+        "data/processed/movies_with_tags.pkl", 
+        "data/processed/tfidf_vectors.pkl", 
+        "data/vector_db/movies.faiss"
+    )
+
+# Instantiate the engine using the cached function
+engine = load_engine()
 
 # --- SIDEBAR: DETERMINISTIC FILTERS ---
 with st.sidebar:
     st.markdown("### ⚙️ Search Filters")
     st.caption("Fine-tune your recommendations")
     
-    # Slider for Minimum Rating
     min_rating = st.slider("Minimum IMDb Rating", min_value=0.0, max_value=10.0, value=6.0, step=0.5)
-    
-    # Dual-Slider for Release Year
     year_range = st.slider("Release Year", min_value=1920, max_value=2024, value=(1990, 2024))
     
     st.divider()
@@ -41,10 +51,8 @@ st.markdown("### What kind of movie are you looking for?")
 plot_text = st.text_input("", placeholder="e.g., A team of astronauts travel through a wormhole...", label_visibility="collapsed")
 
 if st.button("Search Movies", type="primary"):
-    with st.spinner("Analyzing semantics and applying filters..."):
-        engine = HybridEngine("data/processed/movies_with_tags.pkl", "data/processed/tfidf_vectors.pkl", "data/vector_db/movies.faiss")
-        
-        # We are now passing the UI variables into the engine!
+    with st.spinner("Analyzing semantics and fetching posters..."):
+        # Notice we don't initialize the engine here anymore! We just use it.
         recommended_movies = engine.get_recommendations(
             plot_text, 
             top_n=3,
