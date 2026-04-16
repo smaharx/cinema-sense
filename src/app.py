@@ -1,7 +1,7 @@
 """
 Cinema-Sense: AI-Powered Semantic Movie Search
 """
-
+import concurrent.futures
 import streamlit as st
 from models.hybrid_engine import HybridEngine
 from utils.tmdb_api import get_movie_poster  
@@ -64,12 +64,15 @@ if st.button("Search Movies", type="primary"):
         st.warning("⚠️ **No movies found matching your exact criteria.**")
         st.info("💡 **Try this:** Lower your minimum IMDb rating, expand your Release Year range, or use a broader search phrase.")
     else:
-        # Only fetch posters and draw columns if we actually have movies!
-        with st.spinner("Fetching posters..."):
-            poster_urls = [get_movie_poster(movie) for movie in recommended_movies]
+        # --- THE NEW ASYNC POSTER FETCHING LOGIC ---
+        with st.spinner("Fetching posters at lightspeed..."):
+            # Open multiple 'lanes' to fetch images simultaneously
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Map the function to the list of movies and run them all at once
+                poster_urls = list(executor.map(get_movie_poster, recommended_movies))
 
         st.markdown("### Top Matches")
-        cols = st.columns(3)
+        cols = st.columns(5)
         
         for i, (movie_title, poster_url) in enumerate(zip(recommended_movies, poster_urls)):
             with cols[i % 3]: 
