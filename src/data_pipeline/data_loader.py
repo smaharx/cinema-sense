@@ -11,9 +11,9 @@ class DataLoader:
         self.credits_path = credits_path
 
     def load_and_merge(self) -> pd.DataFrame:
-       """Loading datafiles and merging files based on the title by 
-       using inner join """
-        print("[INFO] Loading raw datasets...")
+        """Loading datafiles and merging files based on the title by 
+         using inner join """
+        print("[INFO] Loading raw datasets...")     
         try:
             movies = pd.read_csv(self.movies_path)
             credits = pd.read_csv(self.credits_path)
@@ -32,7 +32,7 @@ class DataLoader:
         print("[INFO] Cleaning data and keeping core ML + Metadata columns...")
         
         # ADDED 'vote_average' and 'runtime' for deterministic V2 filtering
-        columns_to_keep = ['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew', 'vote_average', 'runtime']
+        columns_to_keep = ['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew', 'vote_average', 'runtime', 'release_date']
         df = df[columns_to_keep]
 
         # Drop any movies that don't have a plot summary or missing runtimes
@@ -41,8 +41,8 @@ class DataLoader:
         return df
 
     def save_processed_data(self, df: pd.DataFrame, output_path: str):
-       """Storing the data into clean file so that we donot need to do all this 
-       labour work again and again"""
+        """Storing the data into clean file so that we donot need to do all this 
+        labour work again and again"""
         # Ensure the directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         df.to_csv(output_path, index=False)

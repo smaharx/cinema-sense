@@ -69,7 +69,7 @@ class DataPreprocessor:
         
         # Convert list back to a single string paragraph and make lowercase
         # V2 UPDATE: We must carry vote_average and runtime forward!
-        new_df = df[['movie_id', 'title', 'tags', 'vote_average', 'runtime']].copy()
+        new_df = df[['movie_id', 'title', 'tags', 'vote_average', 'runtime', 'release_date']].copy()
         new_df['tags'] = new_df['tags'].apply(lambda x: " ".join(x).lower())
         
         # Apply stemming
