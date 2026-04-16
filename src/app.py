@@ -40,6 +40,8 @@ with st.sidebar:
     num_recs = st.slider("Number of Recommendations", min_value=3, max_value=15, value=6, step=3)
     
     min_rating = st.slider("Minimum IMDb Rating", min_value=0.0, max_value=10.0, value=6.0, step=0.5)
+    year_range = st.slider("Release Year", min_value=1920, max_value=2024, value=(1990, 2024))
+    
 # --- MAIN UI ---
 st.markdown("<h1 style='text-align: center;'>🎬 Cinema-Sense</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray;'>AI-Powered Semantic Movie Search Engine</p>", unsafe_allow_html=True)
