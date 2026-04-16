@@ -48,8 +48,8 @@ if st.button("Search Movies", type="primary"):
         recommended_movies = engine.get_recommendations(
             plot_text, 
             top_n=3,
-            # min_rating=min_rating,  <-- WE WILL UNCOMMENT THESE IN STEP 2
-            # year_range=year_range
+            min_rating=min_rating, 
+            year_range=year_range
         )
         
         poster_urls = [get_movie_poster(movie) for movie in recommended_movies]
