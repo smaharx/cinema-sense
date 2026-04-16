@@ -36,12 +36,10 @@ with st.sidebar:
     st.markdown("### ⚙️ Search Filters")
     st.caption("Fine-tune your recommendations")
     
-    min_rating = st.slider("Minimum IMDb Rating", min_value=0.0, max_value=10.0, value=6.0, step=0.5)
-    year_range = st.slider("Release Year", min_value=1920, max_value=2024, value=(1990, 2024))
+    # NEW SLIDER: Let the user choose how many movies to see
+    num_recs = st.slider("Number of Recommendations", min_value=3, max_value=15, value=6, step=3)
     
-    st.divider()
-    st.markdown("💡 *Pro tip: Use higher ratings to filter out B-movies.*")
-
+    min_rating = st.slider("Minimum IMDb Rating", min_value=0.0, max_value=10.0, value=6.0, step=0.5)
 # --- MAIN UI ---
 st.markdown("<h1 style='text-align: center;'>🎬 Cinema-Sense</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray;'>AI-Powered Semantic Movie Search Engine</p>", unsafe_allow_html=True)
@@ -54,29 +52,36 @@ if st.button("Search Movies", type="primary"):
     with st.spinner("Analyzing semantics and fetching posters..."):
         recommended_movies = engine.get_recommendations(
             plot_text, 
-            top_n=3,
+            top_n=num_recs, # <-- Pass the user's choice here!
             min_rating=min_rating, 
             year_range=year_range
         )
         
-    # --- NEW LOGIC: THE EMPTY STATE HANDLER ---
     if not recommended_movies:
         st.warning("⚠️ **No movies found matching your exact criteria.**")
         st.info("💡 **Try this:** Lower your minimum IMDb rating, expand your Release Year range, or use a broader search phrase.")
     else:
-        # --- THE NEW ASYNC POSTER FETCHING LOGIC ---
         with st.spinner("Fetching posters at lightspeed..."):
-            # Open multiple 'lanes' to fetch images simultaneously
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                # Map the function to the list of movies and run them all at once
                 poster_urls = list(executor.map(get_movie_poster, recommended_movies))
 
         st.markdown("### Top Matches")
-        cols = st.columns(5)
         
-        for i, (movie_title, poster_url) in enumerate(zip(recommended_movies, poster_urls)):
-            with cols[i % 3]: 
-                with st.container(border=True):
-                    st.image(poster_url, width="stretch") 
-                    st.subheader(movie_title)
-                    st.caption(f"Recommendation #{i+1}")
+        # --- THE DYNAMIC GRID SYSTEM ---
+        cols_per_row = 3
+        
+        # Loop through the movies in chunks of 3
+        for i in range(0, len(recommended_movies), cols_per_row):
+            cols = st.columns(cols_per_row)
+            
+            # Slice the current row's movies and posters
+            row_movies = recommended_movies[i:i + cols_per_row]
+            row_posters = poster_urls[i:i + cols_per_row]
+            
+            # Draw them in their respective columns
+            for j, (movie_title, poster_url) in enumerate(zip(row_movies, row_posters)):
+                with cols[j]: 
+                    with st.container(border=True):
+                        st.image(poster_url, width="stretch") 
+                        st.subheader(movie_title)
+                        st.caption(f"Recommendation #{i+j+1}")
