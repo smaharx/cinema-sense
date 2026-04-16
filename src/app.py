@@ -48,7 +48,7 @@ st.markdown("<p style='text-align: center; color: gray;'>AI-Powered Semantic Mov
 st.divider()
 
 st.markdown("### What kind of movie are you looking for?")
-plot_text = st.text_input("", placeholder="e.g., A team of astronauts travel through a wormhole...", label_visibility="collapsed")
+plot_text = st.text_input("Search Plot", placeholder="e.g., A team of astronauts travel through a wormhole...", label_visibility="collapsed")
 
 if st.button("Search Movies", type="primary"):
     with st.spinner("Analyzing semantics and fetching posters..."):
