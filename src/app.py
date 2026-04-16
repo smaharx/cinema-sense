@@ -52,7 +52,6 @@ plot_text = st.text_input("Search Plot", placeholder="e.g., A team of astronauts
 
 if st.button("Search Movies", type="primary"):
     with st.spinner("Analyzing semantics and fetching posters..."):
-        # Notice we don't initialize the engine here anymore! We just use it.
         recommended_movies = engine.get_recommendations(
             plot_text, 
             top_n=3,
@@ -60,14 +59,21 @@ if st.button("Search Movies", type="primary"):
             year_range=year_range
         )
         
-        poster_urls = [get_movie_poster(movie) for movie in recommended_movies]
+    # --- NEW LOGIC: THE EMPTY STATE HANDLER ---
+    if not recommended_movies:
+        st.warning("⚠️ **No movies found matching your exact criteria.**")
+        st.info("💡 **Try this:** Lower your minimum IMDb rating, expand your Release Year range, or use a broader search phrase.")
+    else:
+        # Only fetch posters and draw columns if we actually have movies!
+        with st.spinner("Fetching posters..."):
+            poster_urls = [get_movie_poster(movie) for movie in recommended_movies]
 
-    st.markdown("### Top Matches")
-    cols = st.columns(3)
-    
-    for i, (movie_title, poster_url) in enumerate(zip(recommended_movies, poster_urls)):
-        with cols[i % 3]: 
-            with st.container(border=True):
-                st.image(poster_url, width="stretch") 
-                st.subheader(movie_title)
-                st.caption(f"Recommendation #{i+1}")
+        st.markdown("### Top Matches")
+        cols = st.columns(3)
+        
+        for i, (movie_title, poster_url) in enumerate(zip(recommended_movies, poster_urls)):
+            with cols[i % 3]: 
+                with st.container(border=True):
+                    st.image(poster_url, width="stretch") 
+                    st.subheader(movie_title)
+                    st.caption(f"Recommendation #{i+1}")
