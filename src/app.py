@@ -20,14 +20,14 @@ st.set_page_config(
 
 # --- THE FIX: CACHING THE HEAVY AI ENGINE ---
 @st.cache_resource(show_spinner="Booting up AI Engine (This only happens once)...")
+@st.cache_resource(show_spinner="Loading Hybrid Engine...")
 def load_engine():
-    """Loads the heavy pickle files and FAISS index into RAM permanently."""
+    # Only passing the Pandas Dataframe and the FAISS map!
     return HybridEngine(
-        "data/processed/movies_with_tags.pkl", 
-        "data/processed/tfidf_vectors.pkl", 
+        "data/processed/movies_with_tags.pkl",
         "data/vector_db/movies.faiss"
     )
-
+    
 # Instantiate the engine using the cached function
 engine = load_engine()
 
