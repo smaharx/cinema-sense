@@ -1,68 +1,61 @@
 import pandas as pd
-from .nlp_router import NLPRouter
-from .content_based import ContentBasedRecommender
+import numpy as np
+import faiss
+from sentence_transformers import SentenceTransformer
 
 class HybridEngine:
-    def __init__(self, df_path: str, vectors_path: str, faiss_index_path: str):
-        print("[INFO] Booting Hybrid Recommendation Engine...")
-        # Initialize both sub-systems
-        self.router = NLPRouter()
-        self.content_recommender = ContentBasedRecommender(
-            df_path, vectors_path, faiss_index_path
-        )
-
-    # Added explicit parameters to catch the UI sliders!
-    def get_recommendations(self, user_query: str, top_n: int = 5, min_rating: float = None, year_range: tuple = None):
+    def __init__(self, df_path: str, faiss_path: str):
         """
-        The Master Function. Translates English -> Code -> Movie Recommendations.
+        Boots up the engine by loading the freeze-dried database, 
+        the ultra-fast FAISS map, and the Deep Learning language model.
         """
-        print(f"\n[USER SAYS]: '{user_query}'")
+        print("[INFO] Loading database and FAISS index into RAM...")
+        self.df = pd.read_pickle(df_path)
+        self.index = faiss.read_index(faiss_path)
         
-        # 1. Translate English to Dictionary using the NLP Router
-        params = self.router.parse_query(user_query)
-        print(f"[SYSTEM TRANSLATION]: {params}")
-        
-        # --- THE OVERRIDE LOGIC ---
-        # If Streamlit passed a min_rating, use it. Otherwise, fallback to the NLP router's guess.
-        final_min_rating = min_rating if min_rating is not None else params.get("min_rating")
-        
-        # --- Escaping the Title Trap ---
-        if not params.get("movie_title"):
-            print("[INFO] No movie title detected. Switching to Pure Semantic Search...")
-            results = self.content_recommender.recommend_from_text(
-                text_query=user_query,
-                top_n=top_n,
-                min_rating=final_min_rating,
-                max_runtime=params.get("max_runtime"),
-                year_range=year_range # Pass the UI tuple down to the recommender
-            )
-            # Ensure we return a clean list of strings for Streamlit, not a Pandas DataFrame
-            return results.tolist() if isinstance(results, pd.Series) else results
+        # Ensure release_date is a proper datetime object so we can filter by Year
+        self.df['release_date'] = pd.to_datetime(self.df['release_date'], errors='coerce')
 
-        # 2. Feed the translated parameters into our V2 Engine (Title-based)
-        results = self.content_recommender.recommend(
-            movie_title=params["movie_title"],
-            top_n=top_n,
-            min_rating=final_min_rating,
-            max_runtime=params.get("max_runtime"),
-            year_range=year_range # Pass the UI tuple down to the recommender
-        )
-        
-        return results.tolist() if isinstance(results, pd.Series) else results
+        print("[INFO] Booting Deep Learning Model (all-MiniLM-L6-v2)...")
+        # Load the exact same HuggingFace model we used in the preprocessor
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# --- Quick Test Block ---
-if __name__ == "__main__":
-    DF_PATH = "data/processed/movies_with_tags.pkl"
-    VECTORS_PATH = "data/processed/tfidf_vectors.pkl"
-    FAISS_PATH = "data/vector_db/movies.faiss"
+    def get_recommendations(self, query: str, top_n: int = 5, min_rating: float = 0.0, year_range: tuple = (1900, 2024)):
+        """
+        Translates a query into a vector, searches FAISS, and applies Pandas filters.
+        """
+        # --- 1. AI TRANSLATION (Text -> Dense Vector) ---
+        # We pass the query as a list, and it returns a list of vectors. We grab the first one.
+        query_vector = self.model.encode([query])
+        
+        # --- 2. THE MATH (Normalization) ---
+        # Convert to float32 and normalize to length 1 so Cosine Similarity works perfectly
+        query_vector = np.array(query_vector).astype('float32')
+        faiss.normalize_L2(query_vector)
 
-    try:
-        engine = HybridEngine(DF_PATH, VECTORS_PATH, FAISS_PATH)
+        # --- 3. THE SPEED SEARCH (Over-fetching) ---
+        # We ask FAISS for 100 matches to ensure we survive the strict Pandas filters
+        search_depth = max(top_n * 10, 100) 
+        distances, indices = self.index.search(query_vector, k=search_depth)
+
+        # Grab the row IDs from FAISS
+        matched_indices = indices[0]
         
-        # TEST with simulated UI slider values
-        query2 = "a guy with cancer finding hope"
-        print("\n=== TEST 2: PURE SEMANTIC SEARCH WITH UI FILTERS ===")
-        print(engine.get_recommendations(query2, min_rating=8.0, year_range=(1990, 2024)))
+        # --- 4. THE PANDAS GAUNTLET (Filtering) ---
+        # Pull the actual movie data for those 100 IDs from our DataFrame
+        matched_movies = self.df.iloc[matched_indices].copy()
+
+        # Filter 1: Minimum Rating
+        filtered_movies = matched_movies[matched_movies['vote_average'] >= min_rating]
+
+        # Filter 2: Year Range (Extracting the year from the datetime object)
+        filtered_movies = filtered_movies[
+            (filtered_movies['release_date'].dt.year >= year_range[0]) & 
+            (filtered_movies['release_date'].dt.year <= year_range[1])
+        ]
+
+        # --- 5. THE OUTPUT ---
+        # Return only the top_N titles that survived the gauntlet
+        final_titles = filtered_movies['title'].head(top_n).tolist()
         
-    except Exception as e:
-        print(f"[ERROR] {e}")
+        return final_titles
