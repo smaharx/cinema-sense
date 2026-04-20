@@ -2,6 +2,10 @@ import pandas as pd # in this file i am using pandas for merging files, cleaning
                     #removing unwanted movies, specifiying the conditions thourgh columns
 import os       #in this files i am using os library to check the file is exist or not
                 # if not then create then create new one 
+import logging
+
+# Just placing a camera for this file
+logger = logging.getLogger(__name__)                
 
 class DataLoader:
     def __init__(self, movies_path: str, credits_path: str):  
@@ -13,15 +17,15 @@ class DataLoader:
     def load_and_merge(self) -> pd.DataFrame:
         """Loading datafiles and merging files based on the title by 
          using inner join """
-        print("[INFO] Loading raw datasets...")     
+        logger.info("[INFO] Loading raw datasets...")     
         try:
             movies = pd.read_csv(self.movies_path)
             credits = pd.read_csv(self.credits_path)
         except FileNotFoundError as e:
-            print(f"[ERROR] Could not find datasets. Check your data/raw/ folder!\n{e}")
+            logger.info(f"[ERROR] Could not find datasets. Check your data/raw/ folder!\n{e}")
             return None
 
-        print("[INFO] Merging datasets on 'title'...")
+        logger.info("[INFO] Merging datasets on 'title'...")
         # Inner join: Only keep rows where the title exists in both datasets
         movies = movies.merge(credits, on='title')
         return movies
@@ -29,7 +33,7 @@ class DataLoader:
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Cleaning data by specifying number of columns i want 
         and selecting movies based on summary and time of the each movie given"""
-        print("[INFO] Cleaning data and keeping core ML + Metadata columns...")
+        logger.info("[INFO] Cleaning data and keeping core ML + Metadata columns...")
         
         # ADDED 'vote_average' and 'runtime' for deterministic V2 filtering
         columns_to_keep = ['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew', 'vote_average', 'runtime', 'release_date']
@@ -46,7 +50,7 @@ class DataLoader:
         # Ensure the directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         df.to_csv(output_path, index=False)
-        print(f"[SUCCESS] Clean data saved to {output_path}")
+        logger.info(f"[SUCCESS] Clean data saved to {output_path}")
 
 # --- Quick Test Block ---
 if __name__ == "__main__":
@@ -64,7 +68,7 @@ if __name__ == "__main__":
     if raw_df is not None:
         # 2. Clean the Data
         clean_df = loader.clean_data(raw_df)
-        print(f"[INFO] Final dataset shape: {clean_df.shape[0]} rows, {clean_df.shape[1]} columns")
+        logger.info(f"[INFO] Final dataset shape: {clean_df.shape[0]} rows, {clean_df.shape[1]} columns")
         
         # 3. Save it for the next phase
         loader.save_processed_data(clean_df, OUTPUT_FILE)

@@ -10,18 +10,28 @@ import pickle
 import os
 from sentence_transformers import SentenceTransformer
 
+import logging
+
+# Configure production logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+
 class Preprocessor:
     def __init__(self, input_path: str, output_dir: str):
         self.input_path = input_path
         self.output_dir = output_dir
         
         # --- THE DEEP LEARNING UPGRADE ---
-        print("[INFO] Booting HuggingFace SentenceTransformer (all-MiniLM-L6-v2)...")
+        logger.info("[INFO] Booting HuggingFace SentenceTransformer (all-MiniLM-L6-v2)...")
         # This downloads the pre-trained neural network weights
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
     def create_tags(self, df: pd.DataFrame) -> pd.DataFrame:
-        print("[INFO] Formatting metadata into context strings...")
+        logger.info("[INFO] Formatting metadata into context strings...")
         # Keeping our VIP list, including release_date for our UI filters!
         new_df = df[['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew', 'vote_average', 'runtime', 'release_date']].copy()
         
@@ -40,17 +50,17 @@ class Preprocessor:
         return new_df
 
     def process_and_save(self):
-        print(f"[INFO] Loading data from {self.input_path}...")
+        logger.info(f"[INFO] Loading data from {self.input_path}...")
         try:
             df = pd.read_csv(self.input_path)
         except FileNotFoundError:
-            print("[ERROR] Clean CSV not found. Run data_loader.py first.")
+            logger.info("[ERROR] Clean CSV not found. Run data_loader.py first.")
             return
 
         tagged_df = self.create_tags(df)
 
-        print(f"[INFO] Encoding {len(tagged_df)} movies into Dense Vectors...")
-        print("[INFO] This will take a moment. Go grab a coffee. ☕")
+        logger.info(f"[INFO] Encoding {len(tagged_df)} movies into Dense Vectors...")
+        logger.info("[INFO] This will take a moment. Go grab a coffee. ☕")
         
         # 1. ENCODING (The heavy math happens here)
         # We use batch_size=32 to protect your RAM. show_progress_bar gives you a nice visual.
@@ -67,7 +77,7 @@ class Preprocessor:
 
         # 3. FAISS INDEXING
         dimension = embeddings.shape[1] # Should be exactly 384
-        print(f"[INFO] Building FAISS Index with {dimension} dimensions...")
+        logger.info(f"[INFO] Building FAISS Index with {dimension} dimensions...")
         index = faiss.IndexFlatIP(dimension)
         index.add(embeddings)
 
@@ -80,7 +90,7 @@ class Preprocessor:
         faiss_path = os.path.join(self.output_dir, "movies.faiss")
         faiss.write_index(index, faiss_path)
         
-        print(f"[SUCCESS] Deep Learning Engine prepared and saved to {self.output_dir}")
+        logger.info(f"[SUCCESS] Deep Learning Engine prepared and saved to {self.output_dir}")
 
 # --- Execution Block ---
 if __name__ == "__main__":

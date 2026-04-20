@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
+import logging
+
+# Just placing a camera for this file
+logger = logging.getLogger(__name__)
+
 def get_movie_poster(movie_title):
     """Fetches the movie poster, cleans the title, and provides a sleek fallback."""
     
@@ -37,6 +42,6 @@ def get_movie_poster(movie_title):
                 return f"https://image.tmdb.org/t/p/w500{poster_path}"
             
     except Exception as e:
-        print(f"[ERROR] TMDb failed for '{clean_title}': {e}")
+        logger.info(f"[ERROR] TMDb failed for '{clean_title}': {e}")
         
     return fallback_url

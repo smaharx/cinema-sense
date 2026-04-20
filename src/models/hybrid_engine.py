@@ -3,20 +3,25 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
+import logging
+
+# Just placing a camera for this file
+logger = logging.getLogger(__name__)
+
 class HybridEngine:
     def __init__(self, df_path: str, faiss_path: str):
         """
         Boots up the engine by loading the freeze-dried database, 
         the ultra-fast FAISS map, and the Deep Learning language model.
         """
-        print("[INFO] Loading database and FAISS index into RAM...")
+        logger.info("[INFO] Loading database and FAISS index into RAM...")
         self.df = pd.read_pickle(df_path)
         self.index = faiss.read_index(faiss_path)
         
         # Ensure release_date is a proper datetime object so we can filter by Year
         self.df['release_date'] = pd.to_datetime(self.df['release_date'], errors='coerce')
 
-        print("[INFO] Booting Deep Learning Model (all-MiniLM-L6-v2)...")
+        logger.info("[INFO] Booting Deep Learning Model (all-MiniLM-L6-v2)...")
         # Load the exact same HuggingFace model we used in the preprocessor
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
