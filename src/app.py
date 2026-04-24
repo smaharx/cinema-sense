@@ -96,7 +96,7 @@ if st.button("Search Movies", type="primary"):
                 
                 with cols[j]: 
                     with st.container(border=True):
-                        st.image(poster_url, use_column_width="always") 
+                        st.image(poster_url, use_container_width=True) 
                         st.subheader(movie_title)
                         st.caption(f"Recommendation #{i+j+1}")
                         
