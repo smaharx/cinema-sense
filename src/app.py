@@ -30,7 +30,6 @@ st.set_page_config(
 
 # --- THE FIX: CACHING THE HEAVY AI ENGINE ---
 @st.cache_resource(show_spinner="Booting up AI Engine (This only happens once)...")
-@st.cache_resource(show_spinner="Loading Hybrid Engine...")
 def load_engine():
     # Only passing the Pandas Dataframe and the FAISS map!
     return HybridEngine(
