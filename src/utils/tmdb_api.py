@@ -48,3 +48,41 @@ def get_movie_poster(movie_title):
         logger.info(f"[ERROR] TMDb failed for '{clean_title}': {e}")
         
     return fallback_url
+
+
+
+@st.cache_data
+def get_movie_details(movie_title):
+    """Fetches both the poster URL and the plot synopsis from TMDb."""
+    api_key = os.getenv("TMDB_API_KEY")
+    # If the key is in Streamlit secrets, it will also fall back to this:
+    if not api_key:
+        try:
+            api_key = st.secrets["TMDB_API_KEY"]
+        except:
+            pass
+
+    search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={movie_title}"
+    
+    try:
+        response = requests.get(search_url)
+        data = response.json()
+        
+        if data['results']:
+            # Grab the first search result
+            movie = data['results'][0]
+            
+            # Get the poster
+            poster_path = movie.get('poster_path')
+            poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=No+Poster+Found"
+            
+            # Get the plot synopsis
+            overview = movie.get('overview', 'No synopsis available for this movie.')
+            
+            return poster_url, overview
+            
+    except Exception as e:
+        print(f"Error fetching details for {movie_title}: {e}")
+        
+    # Fallback if nothing is found
+    return "https://via.placeholder.com/500x750?text=No+Poster+Found", "No synopsis available."
