@@ -1,8 +1,10 @@
+import streamlit as st
 import os
 import re
 import urllib.parse
 import requests
 from dotenv import load_dotenv
+
 
 load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -12,6 +14,7 @@ import logging
 # Just placing a camera for this file
 logger = logging.getLogger(__name__)
 
+@st.cache_data
 def get_movie_poster(movie_title):
     """Fetches the movie poster, cleans the title, and provides a sleek fallback."""
     
