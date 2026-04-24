@@ -4,7 +4,7 @@ Cinema-Sense: AI-Powered Semantic Movie Search
 import concurrent.futures
 import streamlit as st
 from models.hybrid_engine import HybridEngine
-from utils.tmdb_api import get_movie_poster  
+from utils.tmdb_api import get_movie_details
 
 from dotenv import load_dotenv
 import os
@@ -72,9 +72,10 @@ if st.button("Search Movies", type="primary"):
         st.warning("⚠️ **No movies found matching your exact criteria.**")
         st.info("💡 **Try this:** Lower your minimum IMDb rating, expand your Release Year range, or use a broader search phrase.")
     else:
-        with st.spinner("Fetching posters at lightspeed..."):
+        with st.spinner("Fetching posters and plot details at lightspeed..."):
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                poster_urls = list(executor.map(get_movie_poster, recommended_movies))
+                # Use our new function to get a list of tuples: [(poster, overview), (poster, overview)...]
+                movie_details = list(executor.map(get_movie_details, recommended_movies))
 
         st.markdown("### Top Matches")
         
@@ -85,14 +86,20 @@ if st.button("Search Movies", type="primary"):
         for i in range(0, len(recommended_movies), cols_per_row):
             cols = st.columns(cols_per_row)
             
-            # Slice the current row's movies and posters
+            # Slice the current row's movies and details
             row_movies = recommended_movies[i:i + cols_per_row]
-            row_posters = poster_urls[i:i + cols_per_row]
+            row_details = movie_details[i:i + cols_per_row]
             
             # Draw them in their respective columns
-            for j, (movie_title, poster_url) in enumerate(zip(row_movies, row_posters)):
+            for j, (movie_title, details) in enumerate(zip(row_movies, row_details)):
+                poster_url, overview = details # Unpack the tuple
+                
                 with cols[j]: 
                     with st.container(border=True):
-                        st.image(poster_url, width="stretch") 
+                        st.image(poster_url, use_column_width="always") 
                         st.subheader(movie_title)
                         st.caption(f"Recommendation #{i+j+1}")
+                        
+                        # --- THE NEW INTERACTIVE UI ---
+                        with st.expander("📖 Read Synopsis"):
+                            st.write(overview)
