@@ -5,21 +5,11 @@ import concurrent.futures
 import streamlit as st
 from models.hybrid_engine import HybridEngine
 from utils.tmdb_api import get_movie_details
-
-from dotenv import load_dotenv
-import os
+from config import Config
 
 import logging
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 logger = logging.getLogger(__name__)
-
-load_dotenv() 
 
 st.set_page_config(
     page_title="Cinema-Sense",
@@ -31,10 +21,10 @@ st.set_page_config(
 # --- THE FIX: CACHING THE HEAVY AI ENGINE ---
 @st.cache_resource(show_spinner="Booting up AI Engine (This only happens once)...")
 def load_engine():
-    # Only passing the Pandas Dataframe and the FAISS map!
+    # Using centralized configuration for data paths
     return HybridEngine(
-        "data/processed/movies_with_tags.pkl",
-        "data/vector_db/movies.faiss"
+        Config.MOVIES_PICKLE_PATH,
+        Config.FAISS_INDEX_PATH
     )
     
 # Instantiate the engine using the cached function

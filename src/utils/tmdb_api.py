@@ -1,13 +1,8 @@
 import streamlit as st
-import os
 import re
 import urllib.parse
 import requests
-from dotenv import load_dotenv
-
-
-load_dotenv()
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+from config import Config
 
 import logging
 
@@ -25,12 +20,12 @@ def get_movie_poster(movie_title):
     encoded_title = urllib.parse.quote(clean_title)
     fallback_url = f"https://placehold.co/500x750/111418/ffffff?text={encoded_title}\nPoster+Unavailable"
 
-    if not TMDB_API_KEY:
+    if not Config.TMDB_API_KEY:
         return "https://placehold.co/500x750/111418/ff4444?text=Missing+API+Key"
 
     base_url = "https://api.themoviedb.org/3/search/movie"
     params = {
-        "api_key": TMDB_API_KEY,
+        "api_key": Config.TMDB_API_KEY,
         "query": clean_title # Use the cleaned title for better search results!
     }
 
@@ -54,13 +49,8 @@ def get_movie_poster(movie_title):
 @st.cache_data
 def get_movie_details(movie_title):
     """Fetches both the poster URL and the plot synopsis from TMDb."""
-    api_key = os.getenv("TMDB_API_KEY")
-    # If the key is in Streamlit secrets, it will also fall back to this:
-    if not api_key:
-        try:
-            api_key = st.secrets["TMDB_API_KEY"]
-        except:
-            pass
+    # Use centralized Config instead of direct os.getenv or st.secrets
+    api_key = Config.TMDB_API_KEY
 
     search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={movie_title}"
     
@@ -82,7 +72,7 @@ def get_movie_details(movie_title):
             return poster_url, overview
             
     except Exception as e:
-        print(f"Error fetching details for {movie_title}: {e}")
+        logger.error(f"Error fetching details for {movie_title}: {e}")
         
     # Fallback if nothing is found
     return "https://via.placeholder.com/500x750?text=No+Poster+Found", "No synopsis available."
