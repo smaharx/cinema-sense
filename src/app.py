@@ -5,12 +5,9 @@ import concurrent.futures
 import streamlit as st
 from models.hybrid_engine import HybridEngine
 from utils.tmdb_api import get_movie_details
-
-from dotenv import load_dotenv
-import os
+from utils import config
 
 import logging
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,8 +15,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 logger = logging.getLogger(__name__)
-
-load_dotenv() 
 
 st.set_page_config(
     page_title="Cinema-Sense",
@@ -33,8 +28,9 @@ st.set_page_config(
 def load_engine():
     # Only passing the Pandas Dataframe and the FAISS map!
     return HybridEngine(
-        "data/processed/movies_with_tags.pkl",
-        "data/vector_db/movies.faiss"
+        config.MOVIES_PKL_PATH,
+        config.FAISS_INDEX_PATH,
+        config.MODEL_NAME
     )
     
 # Instantiate the engine using the cached function
