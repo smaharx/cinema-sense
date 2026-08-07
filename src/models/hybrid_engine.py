@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import faiss
+import os
 from sentence_transformers import SentenceTransformer
 
 import logging
@@ -9,21 +10,35 @@ import logging
 logger = logging.getLogger(__name__)
 
 class HybridEngine:
-    def __init__(self, df_path: str, faiss_path: str):
+    def __init__(self, df_path: str, faiss_path: str, model_name: str = 'all-MiniLM-L6-v2'):
         """
         Boots up the engine by loading the freeze-dried database, 
         the ultra-fast FAISS map, and the Deep Learning language model.
         """
-        logger.info("[INFO] Loading database and FAISS index into RAM...")
-        self.df = pd.read_pickle(df_path)
-        self.index = faiss.read_index(faiss_path)
-        
-        # Ensure release_date is a proper datetime object so we can filter by Year
-        self.df['release_date'] = pd.to_datetime(self.df['release_date'], errors='coerce')
+        if not os.path.exists(df_path):
+            raise FileNotFoundError(f"Database file not found at: {df_path}")
+        if not os.path.exists(faiss_path):
+            raise FileNotFoundError(f"FAISS index file not found at: {faiss_path}")
 
-        logger.info("[INFO] Booting Deep Learning Model (all-MiniLM-L6-v2)...")
-        # Load the exact same HuggingFace model we used in the preprocessor
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        logger.info(f"[INFO] Loading database from {df_path} and FAISS index from {faiss_path} into RAM...")
+        try:
+            self.df = pd.read_pickle(df_path)
+            self.index = faiss.read_index(faiss_path)
+        except Exception as e:
+            logger.error(f"Error loading engine data: {e}")
+            raise
+
+        # Ensure release_date is a proper datetime object so we can filter by Year
+        if 'release_date' in self.df.columns:
+            self.df['release_date'] = pd.to_datetime(self.df['release_date'], errors='coerce')
+
+        logger.info(f"[INFO] Booting Deep Learning Model ({model_name})...")
+        try:
+            # Load the exact same HuggingFace model we used in the preprocessor
+            self.model = SentenceTransformer(model_name)
+        except Exception as e:
+            logger.error(f"Error loading model {model_name}: {e}")
+            raise
 
     def get_recommendations(self, query: str, top_n: int = 5, min_rating: float = 0.0, year_range: tuple = (1900, 2024)):
         """
